@@ -3,11 +3,12 @@ package com.govtech.govtrial.seeders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.core.io.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ResourceUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,9 +25,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.govtech.govtrial.repositories.EmployeeRepository;
 import com.github.javafaker.Faker;
 import com.govtech.govtrial.models.Employee;
@@ -40,13 +38,12 @@ public class DatabaseSeeder {
     
     private int numberOfEmployees = 100;	// Number of employees to prepopulate
 	private int minimumSalary = 800;
-	private int maximumSalary = 10000;	
-	private String folderUri = "src/main/resources/static/secrets/"; // Secrets Location
+	private int maximumSalary = 10000;
 	private String fileName = "i-cant-believe-you-store-such-secrets-in-plain-text.csv"; // employee salary file name
     
     @Autowired
     public DatabaseSeeder(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    	this.employeeRepository = employeeRepository;
     }
     
     @EventListener
@@ -91,6 +88,7 @@ public class DatabaseSeeder {
         for(int employeeIndex=0; employeeIndex<numberOfEmployees; employeeIndex++) {
         	
             Employee employee = new Employee();
+            employee.setId(employeeIndex);
             employee.setName(faker.name().fullName());
             employee.setSalary(
             	faker.number().randomDouble(2, minimumSalary, maximumSalary)
@@ -112,11 +110,9 @@ public class DatabaseSeeder {
      * 
      */
     public boolean doesEmployeeListCSVExist() {
-
-    	final String pathFile = folderUri+fileName; 
     	
         try {
-        	File file = new File( pathFile );
+        	File file = new File(fileName);
         	return file.exists();
         } catch (Exception e){
            e.printStackTrace();
@@ -134,14 +130,13 @@ public class DatabaseSeeder {
      */
     public boolean saveEmployeeListToCSV( List<Employee> employees ){
     	
-    	final String pathFile = folderUri+fileName; 
     	final String[] CSV_HEADER = { "id", "name", "salary" };
 		
 		FileWriter fileWriter = null;
 		CSVPrinter csvPrinter = null;
  
 		try {
-			fileWriter = new FileWriter(pathFile);
+			fileWriter = new FileWriter(fileName);
 			csvPrinter = new CSVPrinter(fileWriter, CSVFormat.DEFAULT.withHeader(CSV_HEADER));
  
 			for (Employee employee : employees) {
@@ -180,15 +175,13 @@ public class DatabaseSeeder {
      */
     public ArrayList<Employee> loadEmployeeListFromCSV(){
     	
-    	final String pathFile = folderUri+fileName; 
-    	
     	BufferedReader fileReader = null;
 		CSVParser csvParser = null;
 
     	ArrayList<Employee> employees = new ArrayList<Employee>();
 		
 		try {
-			fileReader = new BufferedReader(new FileReader(pathFile));
+			fileReader = new BufferedReader(new FileReader(fileName));
 			csvParser = new CSVParser(fileReader,
 					CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
  
